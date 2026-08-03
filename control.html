@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenten Challenge - Steuerung</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1>Agenten Challenge — Steuerung</h1>
+          <div class="subtitle">Klick auf einen Agenten zum An-/Abhaken. Änderungen landen live im Overlay.</div>
+        </div>
+        <a href="index.html">&larr; Übersicht</a>
+      </div>
+
+      <div class="token-box" id="tokenBox">
+        <input type="password" id="tokenInput" placeholder="GitHub Fine-grained Token einfügen…" autocomplete="off" />
+        <button id="saveTokenBtn">Verbinden</button>
+        <span class="status-line" id="tokenStatus"></span>
+      </div>
+
+      <div class="token-box" id="connectedBox" style="display: none">
+        <span class="status-line ok">✓ Verbunden — Änderungen werden gespeichert</span>
+        <button class="secondary" id="changeTokenBtn">Token ändern</button>
+        <button class="danger" id="resetBtn">Alles zurücksetzen</button>
+        <span class="status-line" id="syncStatus"></span>
+      </div>
+
+      <div class="progress-wrap" id="progress">
+        <div class="progress-label">
+          <span class="progress-count">0 / 0 Agenten gewonnen</span>
+          <span class="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%"></div></div>
+      </div>
+
+      <div id="grid"></div>
+    </div>
+
+    <script src="js/valorant-api.js"></script>
+    <script src="js/github-store.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/control.js"></script>
+  </body>
+</html>

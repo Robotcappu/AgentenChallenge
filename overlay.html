@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenten Challenge - Overlay</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="transparent overlay-body">
+    <div class="page">
+      <div class="progress-wrap" id="progress">
+        <div class="progress-label">
+          <span class="progress-count">0 / 0 Agenten gewonnen</span>
+          <span class="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%"></div></div>
+      </div>
+      <div id="grid"></div>
+    </div>
+
+    <script src="js/valorant-api.js"></script>
+    <script src="js/github-store.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/overlay.js"></script>
+  </body>
+</html>

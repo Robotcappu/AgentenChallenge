@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Valorant Agenten Challenge</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1>Valorant Agenten Challenge</h1>
+          <div class="subtitle">Mit jedem Agenten mindestens einmal gewinnen.</div>
+        </div>
+      </div>
+
+      <div class="token-box">
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; width: 100%">
+          <div>
+            <strong>Steuerung</strong> — hier Agenten während des Streams an-/abhaken.
+            <div>
+              <a href="control.html">control.html öffnen &rarr;</a>
+            </div>
+          </div>
+          <div>
+            <strong>OBS-Overlay</strong> — als Browser-Source in OBS einbinden.
+            <div>
+              <code id="overlayUrl"></code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="subtitle">
+        Setup-Anleitung (GitHub Pages aktivieren, Token erstellen, OBS Browser-Source einrichten)
+        siehe <a href="https://github.com/Robotcappu/AgentenChallenge#readme">README</a>.
+      </p>
+    </div>
+
+    <script>
+      document.getElementById("overlayUrl").textContent = new URL("overlay.html", location.href).href;
+    </script>
+  </body>
+</html>

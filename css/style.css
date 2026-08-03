@@ -1,0 +1,294 @@
+:root {
+  --bg: #0f1923;
+  --bg-elevated: #17232f;
+  --text: #ece8e1;
+  --text-dim: #8b98a5;
+  --accent: #ff4655;
+  --border: #24313e;
+
+  --role-duelist: #ff4655;
+  --role-initiator: #f5c518;
+  --role-controller: #5ec8e8;
+  --role-sentinel: #4ad991;
+  --role-unbekannt: #8b98a5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+body.transparent {
+  background: transparent;
+}
+
+a {
+  color: var(--accent);
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.page-header .subtitle {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+/* ---- Token / Setup Box ---- */
+.token-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.token-box input[type="password"],
+.token-box input[type="text"] {
+  flex: 1 1 260px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: filter 0.15s ease;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}
+
+button:disabled {
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button.secondary {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+button.danger {
+  background: #7a1f27;
+}
+
+.status-line {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  min-height: 1.2em;
+}
+
+.status-line.error {
+  color: var(--accent);
+}
+
+.status-line.ok {
+  color: var(--role-sentinel);
+}
+
+/* ---- Progress bar ---- */
+.progress-wrap {
+  margin-bottom: 1.75rem;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+  color: var(--text-dim);
+}
+
+.progress-label strong {
+  color: var(--text);
+}
+
+.progress-bar {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--role-initiator));
+  border-radius: 999px 0 0 999px;
+  transition: width 0.4s ease;
+}
+
+/* ---- Role sections / grid ---- */
+.role-section {
+  margin-bottom: 1.75rem;
+}
+
+.role-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid var(--role-color, var(--text-dim));
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.6rem;
+}
+
+.agent-card {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  text-align: center;
+  cursor: default;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.agent-card.clickable {
+  cursor: pointer;
+}
+
+.agent-card.clickable:hover {
+  transform: translateY(-2px);
+  border-color: var(--role-color, var(--accent));
+}
+
+.agent-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  filter: grayscale(1) brightness(0.55);
+  transition: filter 0.25s ease;
+}
+
+.agent-card.completed img {
+  filter: none;
+}
+
+.agent-card.completed {
+  border-color: var(--role-color, var(--accent));
+  box-shadow: 0 0 0 1px var(--role-color, var(--accent)) inset;
+}
+
+.agent-card .name {
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-card.completed .name {
+  color: var(--text);
+}
+
+.agent-card .check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--role-color, var(--accent));
+  color: #08110a;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 900;
+  display: none;
+}
+
+.agent-card.completed .check {
+  display: block;
+}
+
+@keyframes pop-complete {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.18);
+    box-shadow: 0 0 22px 4px var(--role-color, var(--accent));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.agent-card.just-completed {
+  animation: pop-complete 0.6s ease;
+}
+
+/* ---- Overlay specific ---- */
+.overlay-body {
+  padding: 0.75rem;
+}
+
+.overlay-body .page {
+  padding: 0.5rem;
+  max-width: none;
+}
+
+.overlay-body .agent-card,
+.overlay-body .role-title {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.overlay-body .agent-card {
+  background: rgba(15, 25, 35, 0.72);
+  backdrop-filter: blur(2px);
+}
