@@ -190,12 +190,12 @@ button.danger {
 .agent-card {
   position: relative;
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: 1px solid var(--role-color, var(--accent));
   border-radius: 10px;
   padding: 0.5rem;
   text-align: center;
   cursor: default;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.25s ease;
 }
 
 .agent-card.clickable {
@@ -211,30 +211,30 @@ button.danger {
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  filter: grayscale(1) brightness(0.55);
+  filter: none;
   transition: filter 0.25s ease;
 }
 
 .agent-card.completed img {
-  filter: none;
+  filter: grayscale(1) brightness(0.55);
 }
 
 .agent-card.completed {
-  border-color: var(--role-color, var(--accent));
-  box-shadow: 0 0 0 1px var(--role-color, var(--accent)) inset;
+  border-color: var(--border);
+  opacity: 0.7;
 }
 
 .agent-card .name {
   font-size: 0.72rem;
   margin-top: 0.3rem;
-  color: var(--text-dim);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .agent-card.completed .name {
-  color: var(--text);
+  color: var(--text-dim);
 }
 
 .agent-card .check {
@@ -244,8 +244,8 @@ button.danger {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: var(--role-color, var(--accent));
-  color: #08110a;
+  background: var(--text-dim);
+  color: var(--bg);
   font-size: 12px;
   line-height: 18px;
   font-weight: 900;

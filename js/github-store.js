@@ -57,6 +57,7 @@ function contentsApiUrl() {
 // da raw.githubusercontent zwischengecached sein kann.
 async function fetchCurrentFile(token) {
   const res = await fetch(contentsApiUrl(), {
+    cache: "no-store",
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
