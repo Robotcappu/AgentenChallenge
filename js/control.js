@@ -59,7 +59,6 @@
       setSyncStatus("Gespeichert ✓", "ok");
     } catch (err) {
       completed = previousSnapshot;
-      draw();
       if (err instanceof GithubAuthError) {
         setSyncStatus("Token ungültig oder ohne Schreibrecht — bitte neu verbinden.", "error");
         token = "";
@@ -68,6 +67,7 @@
       } else {
         setSyncStatus(`Fehler beim Speichern: ${err.message}`, "error");
       }
+      draw();
     }
   }
 
