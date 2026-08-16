@@ -1,7 +1,8 @@
 // Öffentlicher Speicher für den Challenge-Fortschritt über ein Google Apps Script Web App
 // (siehe apps-script/Code.gs). Komplett offen: jeder mit dieser Seite kann lesen und schreiben,
 // keine Anmeldung nötig. Nach dem Deployen des Scripts die URL hier eintragen.
-const APPS_SCRIPT_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbyLxBzVz1qPr24z0FE7q2VD-9VAeji_L3nKTFlV0dLMd3_D0IxEb9bDOo9Bmu_Y7OaWpA/exec";
 
 function isConfigured() {
   return APPS_SCRIPT_URL.startsWith("https://script.google.com/");
