@@ -11,36 +11,35 @@ function emptyState() {
   return { updatedAt: null, completed: {} };
 }
 
-async function readState() {
-  if (!isConfigured()) return emptyState();
-  const res = await fetch(`${APPS_SCRIPT_URL}?t=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Zustand lesen fehlgeschlagen (${res.status})`);
-  const state = await res.json();
-  return { ...emptyState(), ...state };
-}
-
-// Absichtlich Content-Type "text/plain" statt "application/json": das ist ein CORS-"simple
-// request", der ohne Preflight (OPTIONS) auskommt - Apps Script Web Apps beantworten OPTIONS
-// nicht. Der Body ist trotzdem ganz normales JSON, Apps Script liest ihn roh über
-// e.postData.contents und parst ihn selbst.
-async function postAction(action) {
+// Lesen UND Schreiben laufen beide über GET (siehe apps-script/Code.gs für den Grund:
+// script.google.com/.../exec leitet per 302 um, und dabei würde ein POST von fetch()
+// automatisch zu GET degradiert und der Body verworfen werden - GET bleibt bei
+// Redirects immer GET, deshalb ist das der einzige zuverlässige Weg für beides).
+async function callBackend(params) {
   if (!isConfigured()) {
     throw new Error("Apps-Script-URL ist noch nicht eingetragen (js/state-store.js).");
   }
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(action),
-  });
-  if (!res.ok) throw new Error(`Speichern fehlgeschlagen (${res.status})`);
+  const url = new URL(APPS_SCRIPT_URL);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+  url.searchParams.set("t", Date.now());
+
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  if (!res.ok) throw new Error(`Anfrage fehlgeschlagen (${res.status})`);
   const state = await res.json();
   return { ...emptyState(), ...state };
 }
 
+async function readState() {
+  if (!isConfigured()) return emptyState();
+  return callBackend({});
+}
+
 async function toggleAgent(uuid) {
-  return postAction({ action: "toggle", uuid });
+  return callBackend({ action: "toggle", uuid });
 }
 
 async function resetAll() {
-  return postAction({ action: "reset" });
+  return callBackend({ action: "reset" });
 }

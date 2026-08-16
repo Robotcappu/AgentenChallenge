@@ -10,6 +10,13 @@
  *
  * Danach kann jeder (ohne Anmeldung) lesen und den Fortschritt togglen.
  * LockService sorgt dafür, dass zwei gleichzeitige Klicks sich nicht überschreiben.
+ *
+ * WICHTIG: Lesen UND Schreiben laufen beide über GET (?action=toggle&uuid=... bzw.
+ * ?action=reset), nicht über POST. Grund: script.google.com/.../exec leitet jeden
+ * Aufruf per 302 auf eine script.googleusercontent.com-URL um. Browser/fetch() wandeln
+ * bei so einer Weiterleitung einen POST automatisch in GET um und verwerfen dabei den
+ * Body - ein echtes POST würde also lautlos ins Leere laufen. GET bleibt bei Redirects
+ * immer GET, deshalb ist das hier der einzige zuverlässige Weg.
  */
 
 var STATE_KEY = "agentenChallengeState";
@@ -34,31 +41,39 @@ function jsonOutput_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function doGet(e) {
-  return jsonOutput_(readState_());
-}
-
-function doPost(e) {
+function applyAction_(action, uuid) {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    var body = JSON.parse(e.postData.contents);
     var state = readState_();
-
-    if (body.action === "toggle" && body.uuid) {
-      if (state.completed[body.uuid]) {
-        delete state.completed[body.uuid];
+    if (action === "toggle" && uuid) {
+      if (state.completed[uuid]) {
+        delete state.completed[uuid];
       } else {
-        state.completed[body.uuid] = new Date().toISOString();
+        state.completed[uuid] = new Date().toISOString();
       }
-    } else if (body.action === "reset") {
+    } else if (action === "reset") {
       state.completed = {};
     }
-
     state.updatedAt = new Date().toISOString();
     writeState_(state);
-    return jsonOutput_(state);
+    return state;
   } finally {
     lock.releaseLock();
   }
+}
+
+function doGet(e) {
+  var params = (e && e.parameter) || {};
+  if (params.action === "toggle" || params.action === "reset") {
+    return jsonOutput_(applyAction_(params.action, params.uuid));
+  }
+  return jsonOutput_(readState_());
+}
+
+// Delegiert an dieselbe Logik wie doGet, falls doch mal ein Client per POST mit
+// Query-Parametern statt Body zugreift - schadet nicht, wird vom Control-Panel aber
+// nicht genutzt (siehe Hinweis oben).
+function doPost(e) {
+  return doGet(e);
 }
