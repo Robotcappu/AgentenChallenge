@@ -64,8 +64,8 @@ a {
   font-size: 0.95rem;
 }
 
-/* ---- Token / Setup Box ---- */
-.token-box {
+/* ---- Toolbar / info box ---- */
+.toolbar {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -77,8 +77,8 @@ a {
   flex-wrap: wrap;
 }
 
-.token-box input[type="password"],
-.token-box input[type="text"] {
+.toolbar input[type="password"],
+.toolbar input[type="text"] {
   flex: 1 1 260px;
   background: var(--bg);
   border: 1px solid var(--border);

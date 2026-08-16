@@ -2,11 +2,11 @@
 
 Webseite + OBS-Overlay für die Challenge "mit jedem Valorant-Agenten mindestens einmal gewinnen".
 
-- **`control.html`** — Steuer-Panel: Agenten während des Streams an-/abhaken.
+- **`control.html`** — Steuer-Panel: Agenten an-/abhaken. Komplett offen, keine Anmeldung nötig — jeder mit dem Link kann mitsteuern.
 - **`overlay.html`** — OBS Browser-Source: zeigt den Fortschritt live im Stream (transparenter Hintergrund).
 - **`index.html`** — Übersichtsseite mit Links zu beiden.
 
-Agentendaten (Name, Icon, Rolle) kommen live von [valorant-api.com](https://valorant-api.com). Der Fortschritt selbst wird als `state.json` auf einem eigenen Branch (`state-data`) dieses Repos gespeichert — kein separates Backend nötig.
+Agentendaten (Name, Icon, Rolle) kommen live von [valorant-api.com](https://valorant-api.com). Der Fortschritt selbst liegt in einem kleinen, selbst gehosteten Google Apps Script Web App (siehe unten) — komplett kostenlos, keine Anmeldung für die Nutzer, du behältst als Ersteller die volle Kontrolle.
 
 ## 1. GitHub Pages aktivieren
 
@@ -15,17 +15,22 @@ Agentendaten (Name, Icon, Rolle) kommen live von [valorant-api.com](https://valo
 3. Branch: **`main`**, Ordner: **`/ (root)`** → Save.
 4. Nach ein bis zwei Minuten ist die Seite unter `https://robotcappu.github.io/AgentenChallenge/` erreichbar.
 
-## 2. Zugriffs-Token für die Steuerung erstellen
+## 2. Backend (Google Apps Script) einrichten
 
-Die Steuer-Seite (`control.html`) braucht Schreibrechte auf dieses Repo, um den Fortschritt zu speichern. Dafür ein **fine-grained Personal Access Token** anlegen — **nicht** ein "classic" Token, damit der Zugriff eng begrenzt bleibt:
+Das ist der einzige Setup-Schritt, danach braucht **niemand mehr** — auch du nicht — irgendeine Anmeldung, um mitzuspielen.
 
-1. [github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
-2. **Repository access**: "Only select repositories" → `AgentenChallenge` auswählen.
-3. **Permissions → Repository permissions → Contents**: **Read and write**. Alle anderen Permissions auf "No access" lassen.
-4. Token erzeugen und kopieren.
-5. Auf `control.html` einmalig einfügen und auf "Verbinden" klicken — das Token wird nur lokal im Browser gespeichert (`localStorage`), niemals im Repo.
+1. [script.google.com](https://script.google.com) öffnen (mit einem beliebigen Google-Konto) → **Neues Projekt**.
+2. Den kompletten Inhalt von [`apps-script/Code.gs`](apps-script/Code.gs) aus diesem Repo hineinkopieren (vorhandenen Beispielcode ersetzen).
+3. Oben rechts **Bereitstellen → Neue Bereitstellung**.
+4. Typ: **Web App** auswählen.
+5. **Ausführen als**: Ich (dein Konto). **Wer hat Zugriff**: **Jeder**.
+6. **Bereitstellen** klicken, ggf. den Zugriff bestätigen ("Advanced" → "Go to ... (unsafe)" — das ist normal bei eigenen unveröffentlichten Scripts).
+7. Die angezeigte **Web-App-URL** kopieren (sieht aus wie `https://script.google.com/macros/s/…/exec`).
+8. In [`js/state-store.js`](js/state-store.js) die Zeile `const APPS_SCRIPT_URL = "PASTE_YOUR_WEB_APP_URL_HERE";` durch diese URL ersetzen, committen und pushen.
 
-**Wichtig:** Dieses Token ist gleichzeitig dein Zugriffscode für die Steuerung. Nicht öffentlich teilen, nicht im Stream zeigen, nicht in Screenshots.
+**Test:** Die Web-App-URL direkt im Browser öffnen — es sollte `{"completed":{},"updatedAt":null}` erscheinen. Wenn nicht, Schritt 5 (Zugriff: "Jeder") prüfen.
+
+Falls du das Script später änderst: Bereitstellen → **Bestehende Bereitstellung verwalten** → Version → **Bearbeiten** → neue Version wählen, sonst bleibt die alte URL auf dem alten Code hängen.
 
 ## 3. OBS Browser-Source einrichten
 
@@ -37,6 +42,9 @@ Die Steuer-Seite (`control.html`) braucht Schreibrechte auf dieses Repo, um den 
 
 Das Overlay aktualisiert sich danach automatisch alle paar Sekunden, sobald im Control-Panel etwas geändert wird.
 
-## Sicherheitshinweis
+## Offener Zugriff — was das bedeutet
 
-Das Token in `control.html` ist bewusst **fine-grained** und auf **genau dieses eine Repo** mit **nur** "Contents: Read & Write" begrenzt — selbst falls es einmal in falsche Hände gerät, kann damit nichts anderes als der Fortschritt in diesem einen Repo verändert werden. Trotzdem: Control-URL + Token nie gemeinsam veröffentlichen.
+`control.html` prüft keinerlei Anmeldung — **jeder, der den Link kennt, kann Agenten an- und abhaken oder alles zurücksetzen.** Das ist bewusst so gewünscht (z.B. damit ein Mod mithelfen kann), heißt aber auch:
+
+- Den Link zu `control.html` nicht im Stream zeigen bzw. nicht öffentlich teilen, wenn nur bestimmte Leute mitsteuern sollen dürfen.
+- Für dich selbst als OBS-Overlay-Quelle nur `overlay.html` verwenden (rein anzeigend, keine Steuerung möglich) — die eigentliche Steuerung bleibt privat unter `control.html`.
