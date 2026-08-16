@@ -20,6 +20,7 @@
  */
 
 var STATE_KEY = "agentenChallengeState";
+var CODE_VERSION = "v2-get-based"; // nur zur Diagnose beim Deployen, kein Teil der eigentlichen Logik
 
 function readState_() {
   var raw = PropertiesService.getScriptProperties().getProperty(STATE_KEY);
@@ -66,9 +67,13 @@ function applyAction_(action, uuid) {
 function doGet(e) {
   var params = (e && e.parameter) || {};
   if (params.action === "toggle" || params.action === "reset") {
-    return jsonOutput_(applyAction_(params.action, params.uuid));
+    var result = applyAction_(params.action, params.uuid);
+    result.codeVersion = CODE_VERSION;
+    return jsonOutput_(result);
   }
-  return jsonOutput_(readState_());
+  var state = readState_();
+  state.codeVersion = CODE_VERSION;
+  return jsonOutput_(state);
 }
 
 // Delegiert an dieselbe Logik wie doGet, falls doch mal ein Client per POST mit
