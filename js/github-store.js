@@ -76,15 +76,22 @@ async function fetchCurrentFile(token) {
 class GithubAuthError extends Error {}
 class GithubConflictError extends Error {}
 
-// Schreibt den neuen State. Holt vorher frisch die sha, damit Konflikte (409) selten sind;
-// bei einem Konflikt wirft sie GithubConflictError, der Aufrufer soll dann neu laden & retryen.
-async function writeState(newState, token, commitMessage) {
+// Schreibt einen neuen State - MERGE-basiert statt Überschreiben: `computeNewCompleted`
+// bekommt den gerade frisch vom Server gelesenen `completed`-Stand übergeben und muss daraus
+// den zu speichernden Stand berechnen. So gehen Änderungen aus einer anderen Session/einem
+// anderen Gerät (z.B. ein Mod, der gleichzeitig das Panel benutzt) nicht verloren, selbst wenn
+// dieser Aufruf hier retried wird - jeder Versuch holt sich den jeweils aktuellsten Stand.
+// Gibt den tatsächlich geschriebenen `completed`-Stand zurück.
+async function writeState(computeNewCompleted, token, commitMessage) {
   if (!token) throw new GithubAuthError("Kein Token vorhanden");
-  const { sha } = await fetchCurrentFile(token);
+  const { sha, state } = await fetchCurrentFile(token);
+  const newCompleted = computeNewCompleted(state.completed || {});
 
   const body = {
     message: commitMessage || "update state.json",
-    content: utf8ToBase64(JSON.stringify({ ...newState, updatedAt: new Date().toISOString() }, null, 2)),
+    content: utf8ToBase64(
+      JSON.stringify({ completed: newCompleted, updatedAt: new Date().toISOString() }, null, 2)
+    ),
     branch: STATE_BRANCH,
   };
   if (sha) body.sha = sha;
@@ -102,14 +109,16 @@ async function writeState(newState, token, commitMessage) {
   if (res.status === 409) throw new GithubConflictError("Konflikt beim Speichern, bitte erneut versuchen");
   if (res.status === 401 || res.status === 403) throw new GithubAuthError(`Token abgelehnt (${res.status})`);
   if (!res.ok) throw new Error(`GitHub API Fehler beim Schreiben (${res.status})`);
+
+  return newCompleted;
 }
 
-// Schreibt mit ein paar automatischen Retries bei sha-Konflikten (z.B. durch Doppelklicks).
-async function writeStateWithRetry(newState, token, commitMessage, attempts = 3) {
+// Schreibt mit ein paar automatischen Retries bei sha-Konflikten (z.B. zwei Sessions gleichzeitig).
+// Jeder Versuch liest den Server-Stand neu und lässt `computeNewCompleted` neu darüber mergen.
+async function writeStateWithRetry(computeNewCompleted, token, commitMessage, attempts = 3) {
   for (let i = 0; i < attempts; i++) {
     try {
-      await writeState(newState, token, commitMessage);
-      return;
+      return await writeState(computeNewCompleted, token, commitMessage);
     } catch (err) {
       if (err instanceof GithubConflictError && i < attempts - 1) continue;
       throw err;

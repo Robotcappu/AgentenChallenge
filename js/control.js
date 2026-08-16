@@ -1,4 +1,11 @@
 // Steuer-Panel: Agenten frei an-/abhaken, Fortschritt via GitHub-Store speichern.
+// Mehrpersonen-fähig: Statt den Server-Stand blind mit dem lokalen zu überschreiben, hält
+// diese Seite den zuletzt bestätigten Server-Stand (remoteKnown) getrennt von den eigenen,
+// noch nicht bestätigten Klicks (localDeltas). Jeder Schreibvorgang holt sich frisch den
+// aktuellen Server-Stand und wendet nur die eigenen offenen Deltas darauf an - Änderungen
+// einer anderen Person/eines anderen Geräts gehen so nicht verloren.
+
+const CONTROL_POLL_INTERVAL_MS = 5000;
 
 (async function initControl() {
   const tokenBox = document.getElementById("tokenBox");
@@ -14,14 +21,24 @@
 
   let groupedAgents = [];
   let totalAgents = 0;
-  let completed = {};
+  let remoteKnown = {}; // zuletzt vom Server bestätigter completed-Stand
+  let localDeltas = {}; // uuid -> ISO-Timestamp (abgehakt) oder null (zurückgesetzt), noch nicht bestätigt
+  let completed = {}; // remoteKnown + localDeltas zusammengeführt - das, was angezeigt wird
   let token = getStoredToken();
-
-  // Schreibvorgänge laufen strikt nacheinander (nie überlappend), damit schnelle
-  // Klicks nicht um dieselbe Datei-Version konkurrieren. Klicks selbst blockieren nie -
-  // sie aktualisieren die Anzeige sofort und markieren nur "dirty" für den Sync-Loop.
-  let dirty = false;
   let syncing = false;
+
+  function applyDeltas(base, deltas) {
+    const result = { ...base };
+    for (const [uuid, value] of Object.entries(deltas)) {
+      if (value) result[uuid] = value;
+      else delete result[uuid];
+    }
+    return result;
+  }
+
+  function recomputeCompleted() {
+    completed = applyDeltas(remoteKnown, localDeltas);
+  }
 
   function setSyncStatus(text, kind) {
     syncStatus.textContent = text;
@@ -48,26 +65,32 @@
     renderProgress(progressEl, Object.values(completed).filter(Boolean).length, totalAgents);
   }
 
-  // Markiert den aktuellen `completed`-Stand als "muss noch gespeichert werden" und
-  // startet den Sync-Loop, falls er nicht schon läuft. Nie überlappend, aber auch nie
-  // blockierend für den Klick, der es ausgelöst hat.
+  // Startet den Sync-Loop, falls er nicht schon läuft. Klicks selbst blockieren nie -
+  // sie aktualisieren die Anzeige sofort, der Loop räumt localDeltas im Hintergrund ab.
   function scheduleSync() {
-    dirty = true;
     if (syncing) return;
     syncing = true;
     runSyncLoop();
   }
 
   async function runSyncLoop() {
-    while (dirty) {
-      dirty = false;
-      const snapshot = { ...completed }; // immer der neueste Stand, inkl. zwischenzeitlicher Klicks
+    while (Object.keys(localDeltas).length > 0) {
+      const deltasSnapshot = { ...localDeltas };
       setSyncStatus("Speichere…");
       try {
-        await writeStateWithRetry({ completed: snapshot }, token, "update progress");
-        if (!dirty) setSyncStatus("Gespeichert ✓", "ok");
+        const written = await writeStateWithRetry(
+          (freshRemoteCompleted) => applyDeltas(freshRemoteCompleted, deltasSnapshot),
+          token,
+          "update progress"
+        );
+        remoteKnown = written;
+        for (const uuid of Object.keys(deltasSnapshot)) {
+          if (localDeltas[uuid] === deltasSnapshot[uuid]) delete localDeltas[uuid];
+        }
+        recomputeCompleted();
+        draw();
+        if (Object.keys(localDeltas).length === 0) setSyncStatus("Gespeichert ✓", "ok");
       } catch (err) {
-        dirty = true; // dieser Stand soll beim nächsten Anlauf erneut versucht werden
         if (err instanceof GithubAuthError) {
           setSyncStatus("Token ungültig oder ohne Schreibrecht — bitte neu verbinden.", "error");
           token = "";
@@ -85,8 +108,9 @@
 
   function handleToggle(agent) {
     if (!token) return;
-    if (completed[agent.uuid]) delete completed[agent.uuid];
-    else completed[agent.uuid] = new Date().toISOString();
+    const isCurrentlyCompleted = Boolean(completed[agent.uuid]);
+    localDeltas[agent.uuid] = isCurrentlyCompleted ? null : new Date().toISOString();
+    recomputeCompleted();
     draw();
     scheduleSync();
   }
@@ -95,9 +119,27 @@
     if (!token) return;
     const sure = confirm("Wirklich den GESAMTEN Fortschritt zurücksetzen? Das kann nicht rückgängig gemacht werden.");
     if (!sure) return;
-    completed = {};
+    for (const uuid of Object.keys(completed)) {
+      localDeltas[uuid] = null;
+    }
+    recomputeCompleted();
     draw();
     scheduleSync();
+  }
+
+  // Holt periodisch den Server-Stand, damit Änderungen einer anderen Person/eines anderen
+  // Geräts sichtbar werden, auch ohne dass man selbst gerade etwas anklickt. Während ein
+  // eigener Schreibvorgang läuft, wird der Server-Stand ohnehin schon frisch abgeglichen.
+  async function pollRemote() {
+    if (syncing) return;
+    try {
+      const state = await readState();
+      remoteKnown = state.completed || {};
+      recomputeCompleted();
+      draw();
+    } catch {
+      // Transienter Fehler - beim nächsten Poll erneut versuchen.
+    }
   }
 
   saveTokenBtn.addEventListener("click", () => {
@@ -112,10 +154,7 @@
     setTokenStatus("");
     updateConnectionUi();
     draw();
-    if (dirty && !syncing) {
-      syncing = true;
-      runSyncLoop();
-    }
+    scheduleSync();
   });
 
   changeTokenBtn.addEventListener("click", () => {
@@ -138,11 +177,14 @@
 
   try {
     const state = await readState();
-    completed = state.completed || {};
+    remoteKnown = state.completed || {};
   } catch {
-    completed = {};
+    remoteKnown = {};
   }
+  recomputeCompleted();
 
   updateConnectionUi();
   draw();
+
+  setInterval(pollRemote, CONTROL_POLL_INTERVAL_MS);
 })();
